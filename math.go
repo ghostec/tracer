@@ -122,7 +122,3 @@ func RandomInHemisphere(normal Vec3) Vec3 {
 	}
 	return inUnitSphere.Neg()
 }
-
-func Reflect(vector, normal Vec3) Vec3 {
-	return vector.Sub(normal.MulFloat(2 * vector.Dot(normal)))
-}
