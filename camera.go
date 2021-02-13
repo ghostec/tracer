@@ -1,28 +1,32 @@
 package tracer
 
+import "math"
+
 type Camera struct {
-	AspectRatio    float64
-	ViewportHeight float64
-	FocalLength    float64
+	AspectRatio float64
+	VFoV        float64 // vertical field-of-view in degrees
+	LookFrom    Point3
+	LookAt      Point3
+	VUp         Vec3
 }
 
-func (c Camera) GetRay(u, v float64) Ray {
-	viewportWidth := c.AspectRatio * c.ViewportHeight
-	origin := Point3{0, 0, 0}
-	horizontal := Vec3{viewportWidth, 0, 0}
-	vertical := Vec3{0, c.ViewportHeight, 0}
-	lowerLeftCorner := origin.Vec3().Sub(horizontal.MulFloat(0.5)).Sub(vertical.MulFloat(0.5)).Sub(Vec3{0, 0, c.FocalLength})
+func (c Camera) GetRay(s, t float64) Ray {
+	theta := DegreesToRadians(c.VFoV)
+	h := math.Tan(theta / 2.0)
+	viewportHeight := 2.0 * h
+	viewportWidth := c.AspectRatio * viewportHeight
+
+	w := c.LookFrom.Vec3().Sub(c.LookAt.Vec3()).Unit()
+	u := c.VUp.Cross(w).Unit()
+	v := w.Cross(u)
+
+	origin := c.LookFrom
+	horizontal := u.MulFloat(viewportWidth)
+	vertical := v.MulFloat(viewportHeight)
+	lowerLeftCorner := origin.Vec3().Sub(horizontal.MulFloat(0.5)).Sub(vertical.MulFloat(0.5)).Sub(w)
 
 	return Ray{
 		Origin:    origin,
-		Direction: lowerLeftCorner.Add(horizontal.MulFloat(u)).Add(vertical.MulFloat(v)).Sub(origin.Vec3()),
-	}
-}
-
-func DefaultCamera() Camera {
-	return Camera{
-		AspectRatio:    16.0 / 9.0,
-		ViewportHeight: 2.0,
-		FocalLength:    1.0,
+		Direction: lowerLeftCorner.Add(horizontal.MulFloat(s)).Add(vertical.MulFloat(t)).Sub(origin.Vec3()),
 	}
 }

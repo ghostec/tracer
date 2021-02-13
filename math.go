@@ -122,3 +122,7 @@ func RandomInHemisphere(normal Vec3) Vec3 {
 	}
 	return inUnitSphere.Neg()
 }
+
+func DegreesToRadians(degrees float64) float64 {
+	return degrees * math.Pi / 180.0
+}

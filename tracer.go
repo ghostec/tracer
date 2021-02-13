@@ -36,7 +36,7 @@ func Render(frame *Frame, cam Camera, l HitterList, nWorkers int) {
 		FrameHeight:     frame.Height(),
 		MaxDepth:        50,
 		Camera:          cam,
-		SamplesPerPixel: 100,
+		SamplesPerPixel: 200,
 		HitterList:      l,
 	}
 
