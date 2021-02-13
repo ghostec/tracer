@@ -1,11 +1,16 @@
 package tracer
 
 import (
+	"errors"
 	"math"
+	"sort"
+
+	"lukechampine.com/frand"
 )
 
 type Hitter interface {
 	Hit(Ray) HitRecord
+	BoundingBox() AABB
 }
 
 type HitRecord struct {
@@ -63,6 +68,13 @@ func (s Sphere) Hit(r Ray) HitRecord {
 	return hr
 }
 
+func (s Sphere) BoundingBox() AABB {
+	return AABB{
+		Point3(s.Center.Vec3().Sub(Vec3{s.Radius, s.Radius, s.Radius})),
+		Point3(s.Center.Vec3().Add(Vec3{s.Radius, s.Radius, s.Radius})),
+	}
+}
+
 type HitterList []Hitter
 
 func (h HitterList) Hit(r Ray) (hr HitRecord) {
@@ -74,4 +86,88 @@ func (h HitterList) Hit(r Ray) (hr HitRecord) {
 		}
 	}
 	return
+}
+
+func (h HitterList) BoundingBox() AABB {
+	if len(h) == 0 {
+		return AABB{}
+	}
+
+	var outputBox AABB
+	firstBox := true
+	for _, hitter := range h {
+		bb := hitter.BoundingBox()
+		if bb.Zero() {
+			return AABB{}
+		}
+		outputBox = bb
+		if !firstBox {
+			outputBox.Surrounding(bb)
+		}
+		firstBox = false
+	}
+
+	return outputBox
+}
+
+type BVHNode struct {
+	Box         AABB
+	Left, Right Hitter
+}
+
+func NewBVHNode(l HitterList) BVHNode {
+	axis := frand.Intn(3)
+
+	node := BVHNode{}
+
+	switch len(l) {
+	case 1:
+		node.Left, node.Right = l[0], l[0]
+	case 2:
+		if l[0].BoundingBox().Compare(l[1].BoundingBox(), axis) {
+			node.Left, node.Right = l[0], l[1]
+		} else {
+			node.Left, node.Right = l[1], l[0]
+		}
+	default:
+		sort.Slice(l, func(i, j int) bool {
+			return l[i].BoundingBox().Compare(l[j].BoundingBox(), axis)
+		})
+
+		mid := len(l) / 2
+		node.Left = NewBVHNode(l[:mid])
+		node.Right = NewBVHNode(l[mid:])
+	}
+
+	if node.Left.BoundingBox().Zero() || node.Right.BoundingBox().Zero() {
+		panic(errors.New("hahaha"))
+	}
+
+	node.Box = node.Left.BoundingBox().Surrounding(node.Right.BoundingBox())
+
+	return node
+}
+
+func (n BVHNode) BoundingBox() AABB {
+	return n.Box
+}
+
+func (n BVHNode) Hit(ray Ray) HitRecord {
+	if hr := n.Box.Hit(ray); !hr.Hit {
+		return HitRecord{}
+	}
+
+	hrLeft := n.Left.Hit(ray)
+	hrRight := n.Right.Hit(ray)
+
+	if hrLeft.Hit && hrRight.Hit {
+		if hrLeft.T < hrRight.T {
+			return hrLeft
+		}
+		return hrRight
+	}
+	if hrLeft.Hit {
+		return hrLeft
+	}
+	return hrRight
 }

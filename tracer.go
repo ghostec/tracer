@@ -6,14 +6,14 @@ import (
 	"lukechampine.com/frand"
 )
 
-func RayColor(r Ray, l HitterList, depth int) Color {
+func RayColor(r Ray, n Hitter, depth int) Color {
 	if depth <= 0 {
 		return Color{}
 	}
 
-	if hr := l.Hit(r); hr.Hit {
+	if hr := n.Hit(r); hr.Hit {
 		if sr := hr.Material.Scatter(r, hr); sr.Scatter {
-			return Color(sr.Attenuation.Vec3().MulVec3(RayColor(sr.Ray, l, depth-1).Vec3()))
+			return Color(sr.Attenuation.Vec3().MulVec3(RayColor(sr.Ray, n, depth-1).Vec3()))
 		}
 		return Color{}
 	}
@@ -36,8 +36,8 @@ func Render(frame *Frame, cam Camera, l HitterList, nWorkers int) {
 		FrameHeight:     frame.Height(),
 		MaxDepth:        50,
 		Camera:          cam,
-		SamplesPerPixel: 200,
-		HitterList:      l,
+		SamplesPerPixel: 100,
+		Hitter:          NewBVHNode(l),
 	}
 
 	for i := 0; i < nWorkers; i++ {
@@ -79,7 +79,7 @@ func Worker(in chan Job, out chan JobResult, done chan bool) {
 				u := (float64(job.Column) + frand.Float64()) / float64(job.Settings.FrameWidth-1)
 				v := (float64(job.Row) + frand.Float64()) / float64(job.Settings.FrameHeight-1)
 				r := job.Settings.Camera.GetRay(u, v)
-				c = Color(c.Vec3().Add(RayColor(r, job.Settings.HitterList, job.Settings.MaxDepth).Vec3()))
+				c = Color(c.Vec3().Add(RayColor(r, job.Settings.Hitter, job.Settings.MaxDepth).Vec3()))
 			}
 
 			c = Color(c.Vec3().MulFloat(1.0 / float64(job.Settings.SamplesPerPixel)))
@@ -102,7 +102,7 @@ type RenderSettings struct {
 	SamplesPerPixel int
 	MaxDepth        int
 	Camera          Camera
-	HitterList      HitterList
+	Hitter          Hitter
 }
 
 type JobResult struct {

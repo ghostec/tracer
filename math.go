@@ -57,6 +57,10 @@ func (v Vec3) Unit() Vec3 {
 	return v.MulFloat(1 / l)
 }
 
+func (v Vec3) Zero() bool {
+	return v[0] == 0.0 && v[1] == 0.0 && v[2] == 0.0
+}
+
 func (v Vec3) NearZero() bool {
 	s := 1e-8
 	return (math.Abs(v[0]) < s) && (math.Abs(v[1])) < s && (math.Abs(v[2]) < s)
