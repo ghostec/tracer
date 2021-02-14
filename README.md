@@ -11,3 +11,4 @@
 * same camera, scene is an infinite square at a fixed distance from the camera (origin of the local cube space), and colors are how distant from the camera the point is
 
 ![image](image.png)
+![image](edges.png)

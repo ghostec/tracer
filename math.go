@@ -130,3 +130,25 @@ func RandomInHemisphere(normal Vec3) Vec3 {
 func DegreesToRadians(degrees float64) float64 {
 	return degrees * math.Pi / 180.0
 }
+
+func ClosestVertex(box AABB, target Point3) Point3 {
+	var closest Point3
+	closestDistance := math.Inf(+1)
+	for _, p := range []Point3{
+		box.Min,
+		box.Max,
+		Point3{box.Min[0], box.Min[1], box.Max[2]},
+		Point3{box.Min[0], box.Max[1], box.Min[2]},
+		Point3{box.Max[0], box.Min[1], box.Min[2]},
+		Point3{box.Min[0], box.Max[1], box.Max[2]},
+		Point3{box.Max[0], box.Min[1], box.Max[2]},
+		Point3{box.Max[0], box.Max[1], box.Min[2]},
+	} {
+		dist := target.Vec3().Sub(p.Vec3()).Len()
+		if dist < closestDistance {
+			closestDistance = dist
+			closest = p
+		}
+	}
+	return closest
+}

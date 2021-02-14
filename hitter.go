@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"sort"
+	"sync/atomic"
 
 	"lukechampine.com/frand"
 )
@@ -20,6 +21,7 @@ type HitRecord struct {
 	P         Point3
 	Normal    Vec3
 	Material  Material
+	BVHNode   BVHNode
 }
 
 type Sphere struct {
@@ -111,32 +113,61 @@ func (h HitterList) BoundingBox() AABB {
 }
 
 type BVHNode struct {
+	ID          uint64
 	Box         AABB
 	Left, Right Hitter
 }
 
-func NewBVHNode(l HitterList) BVHNode {
-	axis := frand.Intn(3)
+// 0 is reserved
+var bvhCounter = uint64(0)
 
-	node := BVHNode{}
+func NewBVHNode(l HitterList) (BVHNode, error) {
+	if len(l) == 0 {
+		return BVHNode{}, errors.New("empty list")
+	}
+
+	axis := frand.Intn(3)
+	node := BVHNode{ID: atomic.AddUint64(&bvhCounter, 1)}
 
 	switch len(l) {
 	case 1:
 		node.Left, node.Right = l[0], l[0]
 	case 2:
+		var err error
 		if l[0].BoundingBox().Compare(l[1].BoundingBox(), axis) {
-			node.Left, node.Right = l[0], l[1]
+			node.Left, err = NewBVHNode(l[:1])
+			if err != nil {
+				return node, err
+			}
+			node.Right, err = NewBVHNode(l[1:])
+			if err != nil {
+				return node, err
+			}
 		} else {
-			node.Left, node.Right = l[1], l[0]
+			node.Left, err = NewBVHNode(l[1:])
+			if err != nil {
+				return node, err
+			}
+			node.Right, err = NewBVHNode(l[:1])
+			if err != nil {
+				return node, err
+			}
 		}
 	default:
 		sort.Slice(l, func(i, j int) bool {
 			return l[i].BoundingBox().Compare(l[j].BoundingBox(), axis)
 		})
 
+		var err error
 		mid := len(l) / 2
-		node.Left = NewBVHNode(l[:mid])
-		node.Right = NewBVHNode(l[mid:])
+		node.Left, err = NewBVHNode(l[:mid])
+		if err != nil {
+			return node, err
+		}
+		node.Right, err = NewBVHNode(l[mid:])
+		if err != nil {
+			return node, err
+		}
 	}
 
 	if node.Left.BoundingBox().Zero() || node.Right.BoundingBox().Zero() {
@@ -145,7 +176,7 @@ func NewBVHNode(l HitterList) BVHNode {
 
 	node.Box = node.Left.BoundingBox().Surrounding(node.Right.BoundingBox())
 
-	return node
+	return node, nil
 }
 
 func (n BVHNode) BoundingBox() AABB {
@@ -160,6 +191,13 @@ func (n BVHNode) Hit(ray Ray) HitRecord {
 	hrLeft := n.Left.Hit(ray)
 	hrRight := n.Right.Hit(ray)
 
+	if _, ok := n.Left.(BVHNode); !ok {
+		hrLeft.BVHNode = n
+	}
+	if _, ok := n.Right.(BVHNode); !ok {
+		hrRight.BVHNode = n
+	}
+
 	if hrLeft.Hit && hrRight.Hit {
 		if hrLeft.T < hrRight.T {
 			return hrLeft
@@ -170,4 +208,47 @@ func (n BVHNode) Hit(ray Ray) HitRecord {
 		return hrLeft
 	}
 	return hrRight
+}
+
+type Plane struct {
+	Origin Point3
+	// Unit
+	Normal Vec3
+	// Width, Height float64
+	Axis [2]Vec3
+}
+
+func NewPlane(origin Point3, normal Vec3) Plane {
+	normal = normal.Unit()
+
+	var tangent0 Vec3
+	switch {
+	case normal[0] != 0:
+		tangent0 = Vec3{-normal[1] / normal[0], 1, 0}
+	case normal[1] != 0:
+		tangent0 = Vec3{1, -normal[0] / normal[1], 0}
+	case normal[2] != 0:
+		tangent0 = Vec3{1, 0, -normal[0] / normal[2]}
+	}
+	tangent0 = tangent0.Unit()
+	tangent1 := normal.Cross(tangent0).Unit()
+
+	return Plane{
+		Origin: origin,
+		Axis:   [2]Vec3{tangent0, tangent1},
+	}
+}
+
+func (p Plane) BoundingBox() AABB {
+	return AABB{}
+}
+
+func (p Plane) Hit(ray Ray) HitRecord {
+	return HitRecord{}
+}
+
+func (p Plane) Project(point Point3) Point3 {
+	v := point.Vec3().Sub(p.Origin.Vec3())
+	dist := v.Dot(p.Normal)
+	return Point3(v.Add(p.Normal.MulFloat(dist)))
 }
