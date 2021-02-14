@@ -72,7 +72,7 @@ func execute() {
 
 	tracer.Render(frame, cam, l, 100, 20, make(chan bool, 1))
 
-	if err := frame.Save("image.ppm"); err != nil {
+	if err := frame.Save("image.png"); err != nil {
 		panic(err)
 	}
 }

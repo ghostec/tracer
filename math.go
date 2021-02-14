@@ -1,7 +1,6 @@
 package tracer
 
 import (
-	"fmt"
 	"math"
 
 	"lukechampine.com/frand"
@@ -77,13 +76,14 @@ func (p Point3) Vec3() Vec3 {
 	return Vec3(p)
 }
 
-func (c Color) String() string {
+func (c Color) RGBA() [4]uint8 {
+	ret := [4]uint8{0, 0, 0, 255}
 	for i, cc := range c {
 		cc = math.Sqrt(cc)
 		cc = 256 * Clamp(cc, 0, 0.999)
-		c[i] = cc
+		ret[i] = uint8(cc)
 	}
-	return fmt.Sprintf("%d %d %d", int(c[0]), int(c[1]), int(c[2]))
+	return ret
 }
 
 func Clamp(x, min, max float64) float64 {

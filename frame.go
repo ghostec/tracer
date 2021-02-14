@@ -2,9 +2,8 @@ package tracer
 
 import (
 	"errors"
-	"fmt"
+	"image/png"
 	"os"
-	"strings"
 	"sync"
 )
 
@@ -47,24 +46,6 @@ func (frame *Frame) Height() int {
 	return len(frame.content)
 }
 
-func (frame *Frame) PPM() string {
-	frame.mu.Lock()
-	defer frame.mu.Unlock()
-
-	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("P3\n%d %d\n255\n", frame.Width(), frame.Height()))
-	for row := frame.Height() - 1; row >= 0; row-- {
-		for column := 0; column < frame.Width(); column++ {
-			sb.WriteString(fmt.Sprintf("%s", frame.content[row][column].String()))
-			if column < frame.Width()-1 {
-				sb.WriteString(" ")
-			}
-		}
-		sb.WriteString("\n")
-	}
-	return sb.String()
-}
-
 func (frame *Frame) Avg(other *Frame) error {
 	frame.mu.Lock()
 	other.mu.Lock()
@@ -94,8 +75,7 @@ func (frame *Frame) Save(path string) error {
 	if err != nil {
 		return err
 	}
-	ppm := frame.PPM()
-	if _, err := f.WriteString(ppm); err != nil {
+	if err := png.Encode(f, NewPPM(frame)); err != nil {
 		return err
 	}
 	return f.Close()
