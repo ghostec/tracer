@@ -70,9 +70,9 @@ func execute() {
 
 	frame := tracer.NewFrame(imageWidth, imageHeight)
 
-	tracer.Render(frame, cam, l, 20)
+	tracer.Render(frame, cam, l, 100, 20, make(chan bool, 1))
 
-	if err := frame.ToPPM("image.ppm"); err != nil {
+	if err := frame.Save("image.ppm"); err != nil {
 		panic(err)
 	}
 }

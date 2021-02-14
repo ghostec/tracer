@@ -1,7 +1,7 @@
 package tracer
 
 import (
-	"sync"
+	"sync/atomic"
 
 	"lukechampine.com/frand"
 )
@@ -23,20 +23,17 @@ func RayColor(r Ray, n Hitter, depth int) Color {
 	return Color(Vec3{1, 1, 1}.MulFloat(1.0 - t).Add(Vec3{0.5, 0.7, 1.0}.MulFloat(t)))
 }
 
-func Render(frame *Frame, cam Camera, l HitterList, nWorkers int) {
+func Render(frame *Frame, cam Camera, l HitterList, samplesPerPixel, nWorkers int, stop <-chan bool) {
 	jobs := make(chan Job, nWorkers)
 	results := make(chan JobResult, nWorkers)
 	done := make(chan bool, 1)
-
-	wg := sync.WaitGroup{}
-	wg.Add(frame.Width() * frame.Height())
 
 	settings := RenderSettings{
 		FrameWidth:      frame.Width(),
 		FrameHeight:     frame.Height(),
 		MaxDepth:        50,
 		Camera:          cam,
-		SamplesPerPixel: 100,
+		SamplesPerPixel: samplesPerPixel,
 		Hitter:          NewBVHNode(l),
 	}
 
@@ -47,26 +44,37 @@ func Render(frame *Frame, cam Camera, l HitterList, nWorkers int) {
 	go func() {
 		for col := 0; col < frame.Width(); col++ {
 			for row := 0; row < frame.Height(); row++ {
-				jobs <- Job{Row: row, Column: col, Settings: &settings}
+				select {
+				case <-stop:
+					return
+				default:
+					jobs <- Job{Row: row, Column: col, Settings: &settings}
+				}
 			}
 		}
 	}()
 
 	go func() {
+		recv := uint64(0)
 		for {
 			select {
 			case result := <-results:
 				frame.Set(result.Row, result.Column, result.Color)
-				wg.Done()
+				atomic.AddUint64(&recv, 1)
+				if recv == uint64(frame.Width()*frame.Height()) {
+					close(done)
+					return
+				}
+			case <-stop:
+				close(done)
+				return
 			case <-done:
 				return
 			}
 		}
 	}()
 
-	wg.Wait()
-
-	close(done)
+	<-done
 }
 
 func Worker(in chan Job, out chan JobResult, done chan bool) {
