@@ -9,38 +9,50 @@ import (
 type RayColorFunc func(ray Ray, hitter Hitter, depth int, bounces int) Color
 type AggColorFunc func([]Color) Color
 
-func RayColor(r Ray, n Hitter, depth, bounces int) Color {
+func RayColor(ray Ray, n Hitter, depth, bounces int) Color {
 	if bounces >= depth {
 		return Color{}
 	}
 
-	if hr := n.Hit(r); hr.Hit {
-		if sr := hr.Material.Scatter(r, hr); sr.Scatter {
-			return Color(sr.Attenuation.Vec3().MulVec3(RayColor(sr.Ray, n, depth, bounces+1).Vec3()))
-		}
+	hr := n.Hit(ray)
+	if !hr.Hit {
+		unitDirection := ray.Direction.Unit()
+		t := 0.5 * (unitDirection[1] + 1.0)
+		return Color(Vec3{1, 1, 1}.MulFloat(1.0 - t).Add(Vec3{0.5, 0.7, 1.0}.MulFloat(t)))
+	}
+
+	sr := hr.Material.Scatter(ray, hr)
+	if !sr.Scatter {
 		return Color{}
 	}
 
-	unitDirection := r.Direction.Unit()
-	t := 0.5 * (unitDirection[1] + 1.0)
-	return Color(Vec3{1, 1, 1}.MulFloat(1.0 - t).Add(Vec3{0.5, 0.7, 1.0}.MulFloat(t)))
+	return Color(sr.Attenuation.Vec3().MulVec3(RayColor(sr.Ray, n, depth, bounces+1).Vec3()))
 }
 
-func RayBVHID(r Ray, n Hitter, _, _ int) Color {
-	if hr := n.Hit(r); hr.Hit {
-		// origin := ClosestVertex(hr.BVHNode.Box, cam.LookFrom)
-		// normal := cam.LookFrom.Vec3().Sub(origin.Vec3())
-		// plane := NewPlane(origin, normal)
-
-		// boxMin := hr.BVHNode.Box.Min.Vec3()
-		// boxMax := hr.BVHNode.Box.Max.Vec3()
-		// origin := Point3(boxMin.Add(boxMax).MulFloat(0.5))
-		// normal := cam.LookFrom.Vec3().Sub(hr.P.Vec3())
-		// plane := NewPlane(origin, normal)
-		return Uint64ToColor(hr.BVHNode.ID)
+func RayBVHID(ray Ray, n Hitter, _, _ int) Color {
+	hr := n.Hit(ray)
+	if !hr.Hit {
+		return Color{}
 	}
 
-	return Color{}
+	return Uint64ToColor(hr.BVHNode.ID)
+}
+
+func RayDistance(ray Ray, n Hitter, _, _ int) Color {
+	hr := n.Hit(ray)
+	if !hr.Hit {
+		return Color{}
+	}
+
+	distVec := ray.Origin.Vec3().Sub(hr.P.Vec3())
+	dist := distVec.Len()
+
+	if dist > 100 {
+		return Color{}
+	}
+
+	col := (-25.5*dist + 255.0) / 255.0
+	return Color{col, col, col}
 }
 
 func ColorToUint64(color Color) uint64 {

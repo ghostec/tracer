@@ -71,7 +71,7 @@ func execute() {
 	frame := tracer.NewFrame(imageWidth, imageHeight)
 
 	// tracer.Render(frame, cam, l, tracer.RayBVHID, tracer.EdgeSamples, 200, 20, make(chan bool, 1))
-	tracer.Render(frame, cam, l, tracer.RayColor, tracer.AvgSamples, 200, 20, make(chan bool, 1))
+	tracer.Render(frame, cam, l, tracer.RayDistance, tracer.AvgSamples, 200, 20, make(chan bool, 1))
 
 	finalFrame := tracer.NewFrame(imageWidth, imageHeight)
 
@@ -86,7 +86,7 @@ func execute() {
 
 	// frame = finalFrame
 
-	if err := frame.Save("image.png"); err != nil {
+	if err := frame.Save("distance.png"); err != nil {
 		panic(err)
 	}
 }

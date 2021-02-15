@@ -27,6 +27,6 @@ func (c Camera) GetRay(s, t float64) Ray {
 
 	return Ray{
 		Origin:    origin,
-		Direction: lowerLeftCorner.Add(horizontal.MulFloat(s)).Add(vertical.MulFloat(t)).Sub(origin.Vec3()),
+		Direction: lowerLeftCorner.Add(horizontal.MulFloat(s)).Add(vertical.MulFloat(t)).Sub(origin.Vec3()).Unit(),
 	}
 }
