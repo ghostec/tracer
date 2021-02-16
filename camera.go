@@ -1,6 +1,10 @@
 package tracer
 
-import "math"
+import (
+	"math"
+
+	"lukechampine.com/frand"
+)
 
 type Camera struct {
 	AspectRatio float64
@@ -29,4 +33,16 @@ func (c Camera) GetRay(s, t float64) Ray {
 		Origin:    origin,
 		Direction: lowerLeftCorner.Add(horizontal.MulFloat(s)).Add(vertical.MulFloat(t)).Sub(origin.Vec3()).Unit(),
 	}
+}
+
+func CameraCoordinatesFromPixel(row, col, frameWidth, frameHeight int) (float64, float64) {
+	u := float64(col) / float64(frameWidth-1)
+	v := float64(row) / float64(frameHeight-1)
+	return u, v
+}
+
+func JitteredCameraCoordinatesFromPixel(row, col, frameWidth, frameHeight int) (float64, float64) {
+	u := (float64(col) + frand.Float64()) / float64(frameWidth-1)
+	v := (float64(row) + frand.Float64()) / float64(frameHeight-1)
+	return u, v
 }

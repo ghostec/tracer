@@ -77,6 +77,9 @@ func (p Point3) Vec3() Vec3 {
 }
 
 func (c Color) RGBA() [4]uint8 {
+	if c.Transparent() {
+		return [4]uint8{0, 0, 0, 0}
+	}
 	ret := [4]uint8{0, 0, 0, 255}
 	for i, cc := range c {
 		cc = math.Sqrt(cc)
@@ -84,6 +87,26 @@ func (c Color) RGBA() [4]uint8 {
 		ret[i] = uint8(cc)
 	}
 	return ret
+}
+
+func (c Color) Transparent() bool {
+	return c[0] == -1 && c[1] == -1 && c[2] == -1
+}
+
+func (c Color) Blend(o Color, cA, oA float64) Color {
+	switch {
+	case c.Transparent():
+		return o
+	case o.Transparent():
+		return c
+	}
+
+	alpha := cA + oA*(1-cA)
+	if alpha == 0.0 {
+		return Color{}
+	}
+	vec := c.Vec3().MulFloat(cA).Add(o.Vec3().MulFloat(oA).MulFloat(1.0 - cA)).MulFloat(1.0 / alpha)
+	return Color(vec.MulFloat(alpha))
 }
 
 func Clamp(x, min, max float64) float64 {
@@ -137,12 +160,12 @@ func ClosestVertex(box AABB, target Point3) Point3 {
 	for _, p := range []Point3{
 		box.Min,
 		box.Max,
-		Point3{box.Min[0], box.Min[1], box.Max[2]},
-		Point3{box.Min[0], box.Max[1], box.Min[2]},
-		Point3{box.Max[0], box.Min[1], box.Min[2]},
-		Point3{box.Min[0], box.Max[1], box.Max[2]},
-		Point3{box.Max[0], box.Min[1], box.Max[2]},
-		Point3{box.Max[0], box.Max[1], box.Min[2]},
+		{box.Min[0], box.Min[1], box.Max[2]},
+		{box.Min[0], box.Max[1], box.Min[2]},
+		{box.Max[0], box.Min[1], box.Min[2]},
+		{box.Min[0], box.Max[1], box.Max[2]},
+		{box.Max[0], box.Min[1], box.Max[2]},
+		{box.Max[0], box.Max[1], box.Min[2]},
 	} {
 		dist := target.Vec3().Sub(p.Vec3()).Len()
 		if dist < closestDistance {

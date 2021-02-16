@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"log"
 	"os"
@@ -23,6 +24,7 @@ func main() {
 			log.Fatal(err)
 		}
 		pprof.StartCPUProfile(f)
+		tracer.DefaultRenderer.Start()
 		execute()
 		defer pprof.StopCPUProfile()
 	}
@@ -68,43 +70,55 @@ func execute() {
 		VUp:         tracer.Vec3{0, 1, 0},
 	}
 
-	frame := tracer.NewFrame(imageWidth, imageHeight)
+	frame := tracer.NewFrame(imageWidth, imageHeight, false)
 
-	// tracer.Render(frame, cam, l, tracer.RayBVHID, tracer.EdgeSamples, 200, 20, make(chan bool, 1))
-	tracer.Render(frame, cam, l, tracer.RayDistance, tracer.AvgSamples, 200, 20, make(chan bool, 1))
-
-	finalFrame := tracer.NewFrame(imageWidth, imageHeight)
-
-	for row := 0; row < frame.Height(); row++ {
-		for col := 0; col < frame.Width(); col++ {
-			if !isEdge(frame, row, col) {
-				continue
-			}
-			finalFrame.Set(row, col, tracer.Color{255, 255, 255})
-		}
+	bvh, err := tracer.NewBVHNode(l)
+	if err != nil {
+		panic(err)
 	}
+
+	tracer.Render(tracer.RenderSettings{
+		Frame:           frame,
+		Camera:          cam,
+		Hitter:          bvh,
+		RayColorFunc:    tracer.RayColor,
+		AggColorFunc:    tracer.AvgSamples,
+		SamplesPerPixel: 200,
+		MaxDepth:        50,
+	}, make(chan bool, 1))
+
+	hr := bvh.Hit(cam.GetRay(tracer.CameraCoordinatesFromPixel(200, 400, imageWidth, imageHeight)))
+	if !hr.Hit {
+		panic(errors.New("no hit"))
+	}
+
+	otherBVH, err := tracer.NewBVHNode(tracer.HitterList{hr.BVHNode.Left})
+
+	otherFrame := tracer.NewFrame(imageWidth, imageHeight, true)
+	tracer.Render(tracer.RenderSettings{
+		Frame:           otherFrame,
+		Camera:          cam,
+		Hitter:          otherBVH,
+		RayColorFunc:    tracer.RayBVHID,
+		AggColorFunc:    tracer.EdgeSamples,
+		SamplesPerPixel: 10,
+	}, make(chan bool, 1))
+	edgesFrame := tracer.ToEdgesFrame(otherFrame, tracer.Color{255, 0, 0})
+
+	// for j := -1; j < 5; j++ {
+	// 	for i := -1; i < 5; i++ {
+	// 		otherFrame.Set(200-j, 400-i, tracer.Color{1.0, 0, 0})
+	// 	}
+	// }
+
+	edgesFrame.Blend(frame, 1.0, 1.0)
+	frame = edgesFrame
+
+	// finalFrame := tracer.NewFrame(imageWidth, imageHeight)
 
 	// frame = finalFrame
 
-	if err := frame.Save("distance.png"); err != nil {
+	if err := frame.Save("blend.png"); err != nil {
 		panic(err)
 	}
-}
-
-func isEdge(frame *tracer.Frame, row, col int) bool {
-	for i := -1; i < 2; i++ {
-		for j := -1; j < 2; j++ {
-			if i == 0 && j == 0 {
-				continue
-			}
-			x, y := row+i, col+j
-			if x < 0 || y < 0 || x >= frame.Height() || y >= frame.Width() {
-				continue
-			}
-			if tracer.ColorToUint64(frame.Get(row, col)) != tracer.ColorToUint64(frame.Get(x, y)) {
-				return true
-			}
-		}
-	}
-	return false
 }
