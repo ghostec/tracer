@@ -65,8 +65,8 @@ func (frame *Frame) Avg(other *Frame) error {
 
 	for row := 0; row < height; row++ {
 		for col := 0; col < width; col++ {
-			frameColor := frame.content[row][col].Vec3().MulFloat(float64(frame.samples + 1))
-			otherColor := other.content[row][col].Vec3().MulFloat(float64(other.samples + 1))
+			frameColor := Vec3(frame.content[row][col]).MulFloat(float64(frame.samples + 1))
+			otherColor := Vec3(other.content[row][col]).MulFloat(float64(other.samples + 1))
 			var color Vec3
 			switch {
 			case Color(frameColor).Transparent():

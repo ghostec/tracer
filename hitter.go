@@ -28,6 +28,20 @@ type Sphere struct {
 	Center   Point3
 	Radius   float64
 	Material Material
+	Box      AABB
+}
+
+func NewSphere(center Point3, radius float64, material Material) *Sphere {
+	box := AABB{
+		Point3(Vec3(center).Sub(Vec3{radius, radius, radius})),
+		Point3(Vec3(center).Add(Vec3{radius, radius, radius})),
+	}
+	return &Sphere{
+		Center:   center,
+		Radius:   radius,
+		Material: material,
+		Box:      box,
+	}
 }
 
 func (s Sphere) Hit(r Ray) HitRecord {
@@ -60,7 +74,7 @@ func (s Sphere) Hit(r Ray) HitRecord {
 		Material: s.Material,
 	}
 
-	outwardNormal := hr.P.Vec3().Sub(s.Center.Vec3()).MulFloat(1 / s.Radius)
+	outwardNormal := Vec3(hr.P).Sub(Vec3(s.Center)).MulFloat(1 / s.Radius)
 	hr.FrontFace = r.Direction.Dot(outwardNormal) < 0
 	hr.Normal = outwardNormal
 	if !hr.FrontFace {
@@ -71,10 +85,7 @@ func (s Sphere) Hit(r Ray) HitRecord {
 }
 
 func (s Sphere) BoundingBox() AABB {
-	return AABB{
-		Point3(s.Center.Vec3().Sub(Vec3{s.Radius, s.Radius, s.Radius})),
-		Point3(s.Center.Vec3().Add(Vec3{s.Radius, s.Radius, s.Radius})),
-	}
+	return s.Box
 }
 
 type HitterList []Hitter
@@ -184,7 +195,7 @@ func (n *BVHNode) BoundingBox() AABB {
 }
 
 func (n *BVHNode) Hit(ray Ray) HitRecord {
-	if hr := n.Box.Hit(ray); !hr.Hit {
+	if !n.Box.Hit(ray) {
 		return HitRecord{}
 	}
 
@@ -248,7 +259,8 @@ func (p Plane) Hit(ray Ray) HitRecord {
 }
 
 func (p Plane) Project(point Point3) Point3 {
-	v := point.Vec3().Sub(p.Origin.Vec3())
-	dist := v.Dot(p.Normal)
-	return Point3(v.Add(p.Normal.MulFloat(dist)))
+	return Point3{}
+	// v := point.Vec3().Sub(p.Origin.Vec3())
+	// dist := v.Dot(p.Normal)
+	// return Point3(v.Add(p.Normal.MulFloat(dist)))
 }

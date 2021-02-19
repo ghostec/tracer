@@ -13,7 +13,7 @@ func (v Vec3) Add(o Vec3) Vec3 {
 }
 
 func (v Vec3) Sub(o Vec3) Vec3 {
-	return v.Add(o.Neg())
+	return Vec3{v[0] - o[0], v[1] - o[1], v[2] - o[2]}
 }
 
 func (v Vec3) Neg() Vec3 {
@@ -68,14 +68,6 @@ func (v Vec3) NearZero() bool {
 type Color Vec3
 type Point3 Vec3
 
-func (c Color) Vec3() Vec3 {
-	return Vec3(c)
-}
-
-func (p Point3) Vec3() Vec3 {
-	return Vec3(p)
-}
-
 func (c Color) RGBA() [4]uint8 {
 	if c.Transparent() {
 		return [4]uint8{0, 0, 0, 0}
@@ -90,7 +82,7 @@ func (c Color) RGBA() [4]uint8 {
 }
 
 func (c Color) Transparent() bool {
-	return c[0] == -1 && c[1] == -1 && c[2] == -1
+	return c == [3]float64{-1, -1, -1}
 }
 
 func (c Color) Blend(o Color, cA, oA float64) Color {
@@ -105,7 +97,7 @@ func (c Color) Blend(o Color, cA, oA float64) Color {
 	if alpha == 0.0 {
 		return Color{}
 	}
-	vec := c.Vec3().MulFloat(cA).Add(o.Vec3().MulFloat(oA).MulFloat(1.0 - cA)).MulFloat(1.0 / alpha)
+	vec := Vec3(c).MulFloat(cA).Add(Vec3(o).MulFloat(oA).MulFloat(1.0 - cA)).MulFloat(1.0 / alpha)
 	return Color(vec.MulFloat(alpha))
 }
 
@@ -167,7 +159,7 @@ func ClosestVertex(box AABB, target Point3) Point3 {
 		{box.Max[0], box.Min[1], box.Max[2]},
 		{box.Max[0], box.Max[1], box.Min[2]},
 	} {
-		dist := target.Vec3().Sub(p.Vec3()).Len()
+		dist := Vec3(target).Sub(Vec3(p)).Len()
 		if dist < closestDistance {
 			closestDistance = dist
 			closest = p

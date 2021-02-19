@@ -24,7 +24,7 @@ func RayColor(ray Ray, scene Hitter, depth, bounces int) Color {
 		return Transparent
 	}
 
-	return Color(sr.Attenuation.Vec3().MulVec3(RayColor(sr.Ray, scene, depth, bounces+1).Vec3()))
+	return Color(Vec3(sr.Attenuation).MulVec3(Vec3(RayColor(sr.Ray, scene, depth, bounces+1))))
 }
 
 func RayBVHID(ray Ray, scene Hitter, _, _ int) Color {
@@ -42,7 +42,7 @@ func RayDistance(ray Ray, n Hitter, _, _ int) Color {
 		return Color{}
 	}
 
-	distVec := ray.Origin.Vec3().Sub(hr.P.Vec3())
+	distVec := Vec3(ray.Origin).Sub(Vec3(hr.P))
 	dist := distVec.Len()
 
 	if dist > 100 {
@@ -72,7 +72,7 @@ func AvgSamples(samples []Color) Color {
 		if samples[i].Transparent() {
 			continue
 		}
-		v = v.Add(samples[i].Vec3())
+		v = v.Add(Vec3(samples[i]))
 	}
 	return Color(v.MulFloat(1.0 / float64(len(samples))))
 }

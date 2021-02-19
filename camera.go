@@ -25,14 +25,14 @@ func (c *Camera) GetRay(s, t float64) Ray {
 		viewportHeight := 2.0 * h
 		viewportWidth := c.AspectRatio * viewportHeight
 
-		w := c.LookFrom.Vec3().Sub(c.LookAt.Vec3()).Unit()
+		w := Vec3(c.LookFrom).Sub(Vec3(c.LookAt)).Unit()
 		u := c.VUp.Cross(w).Unit()
 		v := w.Cross(u)
 
 		origin := c.LookFrom
 		c.horizontal = u.MulFloat(viewportWidth)
 		c.vertical = v.MulFloat(viewportHeight)
-		c.lowerLeftCorner = origin.Vec3().Sub(c.horizontal.MulFloat(0.5)).Sub(c.vertical.MulFloat(0.5)).Sub(w)
+		c.lowerLeftCorner = Vec3(origin).Sub(c.horizontal.MulFloat(0.5)).Sub(c.vertical.MulFloat(0.5)).Sub(w)
 		c.clean = true
 	}
 
