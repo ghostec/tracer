@@ -34,35 +34,18 @@ func execute() {
 	imageWidth := *width
 	imageHeight := int(float64(imageWidth) / *aspectRatio)
 
-	// l := tracer.HitterList{
-	// 	tracer.Sphere{Center: tracer.Point3{0, 0, -1}, Radius: 0.5, Material: tracer.Lambertian{Albedo: tracer.Color{0.7, 0.3, 0.3}}},
-	// 	tracer.Sphere{Center: tracer.Point3{0, -100.5, -1}, Radius: 100, Material: tracer.Lambertian{Albedo: tracer.Color{0.8, 0.8, 0}}},
-	// 	tracer.Sphere{Center: tracer.Point3{-1, 0, -1}, Radius: 0.5, Material: tracer.Dielectric{RefractiveIndex: 1.5}},
-	// 	tracer.Sphere{Center: tracer.Point3{-1, 0, -1}, Radius: -0.48, Material: tracer.Dielectric{RefractiveIndex: 1.5}},
-	// 	tracer.Sphere{Center: tracer.Point3{1, 0, -1}, Radius: 0.5, Material: tracer.Metal{Albedo: tracer.Color{0.8, 0.6, 0.2}, Fuzz: 0.9}},
-	// }
-
-	// var l tracer.HitterList
-	// {
-	// 	R := math.Cos(math.Pi / 4)
-	// 	l = tracer.HitterList{
-	// 		tracer.Sphere{Center: tracer.Point3{-R, 0, -1}, Radius: R, Material: tracer.Lambertian{Albedo: tracer.Color{0, 0, 1}}},
-	// 		tracer.Sphere{Center: tracer.Point3{R, 0, -1}, Radius: R, Material: tracer.Lambertian{Albedo: tracer.Color{1, 0, 0}}},
-	// 	}
-	// }
-
 	var l tracer.HitterList
 	{
 		l = tracer.HitterList{
-			tracer.Sphere{Center: tracer.Point3{0, -100.5, -1}, Radius: 100, Material: tracer.Lambertian{Albedo: tracer.Color{0.8, 0.8, 0}}},
-			tracer.Sphere{Center: tracer.Point3{0, 0, -1}, Radius: 0.5, Material: tracer.Lambertian{Albedo: tracer.Color{0.1, 0.2, 0.5}}},
-			tracer.Sphere{Center: tracer.Point3{-1, 0, -1}, Radius: 0.5, Material: tracer.Dielectric{RefractiveIndex: 1.5}},
-			tracer.Sphere{Center: tracer.Point3{-1, 0, -1}, Radius: -0.48, Material: tracer.Dielectric{RefractiveIndex: 1.5}},
-			tracer.Sphere{Center: tracer.Point3{1, 0, -1}, Radius: 0.5, Material: tracer.Metal{Albedo: tracer.Color{0.8, 0.6, 0.2}}},
+			&tracer.Sphere{Center: tracer.Point3{0, -100.5, -1}, Radius: 100, Material: tracer.Lambertian{Albedo: tracer.Color{0.8, 0.8, 0}}},
+			&tracer.Sphere{Center: tracer.Point3{0, 0, -1}, Radius: 0.5, Material: tracer.Lambertian{Albedo: tracer.Color{0.1, 0.2, 0.5}}},
+			&tracer.Sphere{Center: tracer.Point3{-1, 0, -1}, Radius: 0.5, Material: tracer.Dielectric{RefractiveIndex: 1.5}},
+			&tracer.Sphere{Center: tracer.Point3{-1, 0, -1}, Radius: -0.48, Material: tracer.Dielectric{RefractiveIndex: 1.5}},
+			&tracer.Sphere{Center: tracer.Point3{1, 0, -1}, Radius: 0.5, Material: tracer.Metal{Albedo: tracer.Color{0.8, 0.6, 0.2}}},
 		}
 	}
 
-	cam := tracer.Camera{
+	cam := &tracer.Camera{
 		AspectRatio: 16.0 / 9.0,
 		VFoV:        90,
 		LookFrom:    tracer.Point3{-2, 2, 1},
@@ -83,7 +66,7 @@ func execute() {
 		Hitter:          bvh,
 		RayColorFunc:    tracer.RayColor,
 		AggColorFunc:    tracer.AvgSamples,
-		SamplesPerPixel: 200,
+		SamplesPerPixel: 1000,
 		MaxDepth:        50,
 	}, make(chan bool, 1))
 

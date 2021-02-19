@@ -115,8 +115,8 @@ type Job struct {
 
 type RenderSettings struct {
 	Frame           *Frame
+	Camera          *Camera
 	Hitter          Hitter
-	Camera          Camera
 	SamplesPerPixel int
 	MaxDepth        int
 	RayColorFunc    RayColorFunc

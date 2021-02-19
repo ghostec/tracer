@@ -9,21 +9,35 @@ type AABB struct {
 	Min, Max Point3
 }
 
+func Min(x, y float64) float64 {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func Max(x, y float64) float64 {
+	if x > y {
+		return x
+	}
+	return y
+}
+
 func (a AABB) Hit(ray Ray) HitRecord {
 	tMin, tMax := 0.0, math.Inf(+1)
 
 	for axis := 0; axis < 3; axis++ {
-		t0 := math.Min(
+		t0 := Min(
 			(a.Min[axis]-ray.Origin[axis])/ray.Direction[axis],
 			(a.Max[axis]-ray.Origin[axis])/ray.Direction[axis],
 		)
-		t1 := math.Max(
+		t1 := Max(
 			(a.Min[axis]-ray.Origin[axis])/ray.Direction[axis],
 			(a.Max[axis]-ray.Origin[axis])/ray.Direction[axis],
 		)
 
-		tMin = math.Max(t0, tMin)
-		tMax = math.Min(t1, tMax)
+		tMin = Max(t0, tMin)
+		tMax = Min(t1, tMax)
 
 		if tMax <= tMin {
 			return HitRecord{}
@@ -38,14 +52,14 @@ func (a AABB) Zero() bool {
 
 func (a AABB) Surrounding(b AABB) AABB {
 	small := Point3{
-		math.Min(a.Min.Vec3()[0], b.Min.Vec3()[0]),
-		math.Min(a.Min.Vec3()[1], b.Min.Vec3()[1]),
-		math.Min(a.Min.Vec3()[2], b.Min.Vec3()[2]),
+		Min(a.Min.Vec3()[0], b.Min.Vec3()[0]),
+		Min(a.Min.Vec3()[1], b.Min.Vec3()[1]),
+		Min(a.Min.Vec3()[2], b.Min.Vec3()[2]),
 	}
 	big := Point3{
-		math.Max(a.Max.Vec3()[0], b.Max.Vec3()[0]),
-		math.Max(a.Max.Vec3()[1], b.Max.Vec3()[1]),
-		math.Max(a.Max.Vec3()[2], b.Max.Vec3()[2]),
+		Max(a.Max.Vec3()[0], b.Max.Vec3()[0]),
+		Max(a.Max.Vec3()[1], b.Max.Vec3()[1]),
+		Max(a.Max.Vec3()[2], b.Max.Vec3()[2]),
 	}
 	return AABB{small, big}
 }

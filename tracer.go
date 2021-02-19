@@ -68,11 +68,11 @@ func Uint64ToColor(val uint64) Color {
 
 func AvgSamples(samples []Color) Color {
 	v := Vec3{}
-	for _, cc := range samples {
-		if cc.Transparent() {
+	for i := range samples {
+		if samples[i].Transparent() {
 			continue
 		}
-		v = v.Add(cc.Vec3())
+		v = v.Add(samples[i].Vec3())
 	}
 	return Color(v.MulFloat(1.0 / float64(len(samples))))
 }
@@ -80,8 +80,8 @@ func AvgSamples(samples []Color) Color {
 func EdgeSamples(samples []Color) Color {
 	freq := map[uint64]int{}
 	mostFreqKey := uint64(0)
-	for _, cc := range samples {
-		key := ColorToUint64(cc)
+	for i := range samples {
+		key := ColorToUint64(samples[i])
 		freq[key] += 1
 		if freq[key] > freq[mostFreqKey] {
 			mostFreqKey = key

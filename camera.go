@@ -12,26 +12,33 @@ type Camera struct {
 	LookFrom    Point3
 	LookAt      Point3
 	VUp         Vec3
+
+	lowerLeftCorner      Vec3
+	horizontal, vertical Vec3
+	clean                bool
 }
 
-func (c Camera) GetRay(s, t float64) Ray {
-	theta := DegreesToRadians(c.VFoV)
-	h := math.Tan(theta / 2.0)
-	viewportHeight := 2.0 * h
-	viewportWidth := c.AspectRatio * viewportHeight
+func (c *Camera) GetRay(s, t float64) Ray {
+	if !c.clean {
+		theta := DegreesToRadians(c.VFoV)
+		h := math.Tan(theta / 2.0)
+		viewportHeight := 2.0 * h
+		viewportWidth := c.AspectRatio * viewportHeight
 
-	w := c.LookFrom.Vec3().Sub(c.LookAt.Vec3()).Unit()
-	u := c.VUp.Cross(w).Unit()
-	v := w.Cross(u)
+		w := c.LookFrom.Vec3().Sub(c.LookAt.Vec3()).Unit()
+		u := c.VUp.Cross(w).Unit()
+		v := w.Cross(u)
 
-	origin := c.LookFrom
-	horizontal := u.MulFloat(viewportWidth)
-	vertical := v.MulFloat(viewportHeight)
-	lowerLeftCorner := origin.Vec3().Sub(horizontal.MulFloat(0.5)).Sub(vertical.MulFloat(0.5)).Sub(w)
+		origin := c.LookFrom
+		c.horizontal = u.MulFloat(viewportWidth)
+		c.vertical = v.MulFloat(viewportHeight)
+		c.lowerLeftCorner = origin.Vec3().Sub(c.horizontal.MulFloat(0.5)).Sub(c.vertical.MulFloat(0.5)).Sub(w)
+		c.clean = true
+	}
 
 	return Ray{
-		Origin:    origin,
-		Direction: lowerLeftCorner.Add(horizontal.MulFloat(s)).Add(vertical.MulFloat(t)).Sub(origin.Vec3()).Unit(),
+		Origin:    c.LookFrom,
+		Direction: c.lowerLeftCorner.Add(c.horizontal.MulFloat(s)).Add(c.vertical.MulFloat(t)).Sub(Vec3(c.LookFrom)).Unit(),
 	}
 }
 

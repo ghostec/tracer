@@ -21,7 +21,7 @@ type HitRecord struct {
 	P         Point3
 	Normal    Vec3
 	Material  Material
-	BVHNode   BVHNode
+	BVHNode   *BVHNode
 }
 
 type Sphere struct {
@@ -81,8 +81,8 @@ type HitterList []Hitter
 
 func (h HitterList) Hit(r Ray) (hr HitRecord) {
 	hr.T = math.Inf(+1)
-	for _, hh := range h {
-		hhr := hh.Hit(r)
+	for i := range h {
+		hhr := h[i].Hit(r)
 		if hhr.Hit && hhr.T < hr.T {
 			hr = hhr
 		}
@@ -97,8 +97,8 @@ func (h HitterList) BoundingBox() AABB {
 
 	var outputBox AABB
 	firstBox := true
-	for _, hitter := range h {
-		bb := hitter.BoundingBox()
+	for i := range h {
+		bb := h[i].BoundingBox()
 		if bb.Zero() {
 			return AABB{}
 		}
@@ -121,13 +121,13 @@ type BVHNode struct {
 // 0 is reserved
 var bvhCounter = uint64(0)
 
-func NewBVHNode(l HitterList) (BVHNode, error) {
+func NewBVHNode(l HitterList) (*BVHNode, error) {
 	if len(l) == 0 {
-		return BVHNode{}, errors.New("empty list")
+		return nil, errors.New("empty list")
 	}
 
 	axis := frand.Intn(3)
-	node := BVHNode{ID: atomic.AddUint64(&bvhCounter, 1)}
+	node := &BVHNode{ID: atomic.AddUint64(&bvhCounter, 1)}
 
 	switch len(l) {
 	case 1:
@@ -179,11 +179,11 @@ func NewBVHNode(l HitterList) (BVHNode, error) {
 	return node, nil
 }
 
-func (n BVHNode) BoundingBox() AABB {
+func (n *BVHNode) BoundingBox() AABB {
 	return n.Box
 }
 
-func (n BVHNode) Hit(ray Ray) HitRecord {
+func (n *BVHNode) Hit(ray Ray) HitRecord {
 	if hr := n.Box.Hit(ray); !hr.Hit {
 		return HitRecord{}
 	}
@@ -191,10 +191,10 @@ func (n BVHNode) Hit(ray Ray) HitRecord {
 	hrLeft := n.Left.Hit(ray)
 	hrRight := n.Right.Hit(ray)
 
-	if _, ok := n.Left.(BVHNode); !ok {
+	if _, ok := n.Left.(*BVHNode); !ok {
 		hrLeft.BVHNode = n
 	}
-	if _, ok := n.Right.(BVHNode); !ok {
+	if _, ok := n.Right.(*BVHNode); !ok {
 		hrRight.BVHNode = n
 	}
 

@@ -57,12 +57,14 @@ func (frame *Frame) Avg(other *Frame) error {
 	defer frame.mu.Unlock()
 	defer other.mu.Unlock()
 
-	if frame.Width() != other.Width() || frame.Height() != other.Height() {
+	width, height := frame.Width(), frame.Height()
+
+	if width != other.Width() || height != other.Height() {
 		return errors.New("placeholder")
 	}
 
-	for row := 0; row < frame.Height(); row++ {
-		for col := 0; col < frame.Width(); col++ {
+	for row := 0; row < height; row++ {
+		for col := 0; col < width; col++ {
 			frameColor := frame.content[row][col].Vec3().MulFloat(float64(frame.samples + 1))
 			otherColor := other.content[row][col].Vec3().MulFloat(float64(other.samples + 1))
 			var color Vec3
