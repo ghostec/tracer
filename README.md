@@ -19,3 +19,8 @@
     d. convert to 300x300 grayscale
     e. 30x30 camera distance (4 spp, depth = 20)
         Use max distance in the scene
+
+break render into parts:
+  lambertian
+  specular
+  etc
