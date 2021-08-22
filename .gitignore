@@ -1,3 +1,4 @@
 main
 tracer
 *.out
+.DS_Store
