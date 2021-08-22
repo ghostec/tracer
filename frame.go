@@ -1,6 +1,8 @@
 package tracer
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
 	"image/png"
 	"os"
@@ -94,6 +96,20 @@ func (frame *Frame) Save(path string) error {
 		return err
 	}
 	return f.Close()
+}
+
+func (frame *Frame) Bytes() ([]byte, error) {
+	var buf bytes.Buffer
+
+	w := bufio.NewWriter(&buf)
+	if err := png.Encode(w, NewPPM(frame)); err != nil {
+		return nil, err
+	}
+	if err := w.Flush(); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 func (frame *Frame) Blend(other *Frame, frameAlpha, otherAlpha float64) error {

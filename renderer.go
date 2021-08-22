@@ -34,6 +34,7 @@ func (renderer *Renderer) Render(settings RenderSettings, stop <-chan bool) {
 	sent := uint(0)
 	spawnerDone := make(chan bool, 1)
 	results := make(chan JobResult, renderer.nWorkers)
+
 	go func() {
 		defer close(spawnerDone)
 
@@ -94,7 +95,7 @@ func Worker(in chan Job, done chan bool) {
 		case job := <-in:
 			samples := make([]Color, 0, job.Settings.SamplesPerPixel)
 			for s := 0; s < job.Settings.SamplesPerPixel; s++ {
-				u, v := JitteredCameraCoordinatesFromPixel(job.Row, job.Column, job.Settings.Frame.Width(), job.Settings.Frame.Height())
+				u, v := JitteredCameraCoordinatesFromPixel(job.Settings.LineA+job.Row, job.Column, job.Settings.Frame.Width(), job.Settings.Lines)
 				r := job.Settings.Camera.GetRay(u, v)
 				c := job.Settings.RayColorFunc(r, job.Settings.Hitter, job.Settings.MaxDepth, 0)
 				samples = append(samples, c)
@@ -121,6 +122,9 @@ type RenderSettings struct {
 	MaxDepth        int
 	RayColorFunc    RayColorFunc
 	AggColorFunc    AggColorFunc
+	Lines           int
+	LineA           int
+	LineB           int
 }
 
 type JobResult struct {
