@@ -60,7 +60,7 @@ func (frame *Frame) Avg(other *Frame) error {
 	width, height := frame.Width(), frame.Height()
 
 	if width != other.Width() || height != other.Height() {
-		return errors.New("placeholder")
+		return errors.New("frames dimensions don't match")
 	}
 
 	for row := 0; row < height; row++ {
@@ -98,7 +98,7 @@ func (frame *Frame) Save(path string) error {
 
 func (frame *Frame) Blend(other *Frame, frameAlpha, otherAlpha float64) error {
 	if frame.Width() != other.Width() || frame.Height() != other.Height() {
-		return errors.New("placeholder")
+		return errors.New("frames dimensions don't match")
 	}
 
 	for row := 0; row < frame.Height(); row++ {
